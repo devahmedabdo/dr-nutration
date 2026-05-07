@@ -1466,7 +1466,7 @@
 
         return;
       }
-
+      console.log(result.items)
       list.innerHTML = filtered.map(p => {
 
 
@@ -1578,8 +1578,8 @@
         '<div class="back" onclick="go(\'home\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="15 18 9 12 15 6"/></svg></div>' +
         '<h2>' + p.title + '</h2>' +
         '</div>' +
-        (p.imwdage
-          ? '<div class="detail-img-wrap"><img src="' + p.imwdage + '" alt="' + p.title + '"></div>'
+        (p.image
+          ? '<div class="detail-img-wrap"><iframe src="' + p.image +  '"></iframe> </div>'
           : '<div class="detail-img-wrap"><div class="emoji">' + emoji(p) + '</div></div>') +
         '<div class="detail-body">' +
         '<div class="cats-row">' +
@@ -1608,7 +1608,7 @@
           '<div class="drow"><span class="k">Hours</span><span class="v">' + p.express_delivery.hour_from + ':00 – ' + p.express_delivery.hour_to + ':00</span></div>' +
           '</div>' : '') +
         '<div class="section-card"><h3>Links</h3>' +
-        '<div class="drow"><span class="k">Product URL</span><span class="v" style="color:var(--accent2);font-size:11px;word-break:break-all">' + (p.url || '—') + '</span></div>' +
+        '<div class="drow"><span class="k">Product URL</span><a href="'+p.url+'" target="_blank" class="v" style="color:var(--accent2);font-size:11px;word-break:break-all">' + (p.url || '—') + '</a></div>' +
         '<div class="drow"><span class="k">Product ID</span><span class="v">' + p.unique_id + ' / opt ' + p.product_option_id + '</span></div>' +
         '</div>' +
         '</div>';
