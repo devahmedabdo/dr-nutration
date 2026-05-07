@@ -63,7 +63,7 @@
       overflow: hidden
     }
 
-    
+
 
     .screen {
       flex: 1;
@@ -292,7 +292,7 @@
       margin: 0 12px 12px
     }
 
-  
+
 
     .stat-box .v {
       font-family: 'Syne', sans-serif;
@@ -977,8 +977,8 @@
       background: #1a1a2e;
     }
 
-    #pagination button.active-page { 
-      background: var(--accent); 
+    #pagination button.active-page {
+      background: var(--accent);
       transition: transform .15s, box-shadow .15s;
       box-shadow: 0 0 8px rgba(124, 110, 245, .4), 0 0 40px rgb(221 217 255 / 40%)
     }
@@ -987,7 +987,7 @@
 <body>
   <div class="app">
 
-   
+
 
     <!-- HOME -->
     <div class="screen" id="s-home">
@@ -1008,10 +1008,10 @@
           <div class="sync-text">
             <div style="display: flex;justify-content: space-between;align-items: center;">
               <h3>Sync Products</h3>
-               <div class="stat-box">
-          <div class="v" id="st-total">0</div>
-          <div class="l">Products</div>
-        </div>
+              <div class="stat-box">
+                <div class="v" id="st-total">0</div>
+                <div class="l">Products</div>
+              </div>
             </div>
             <p id="sync-status">Ready — tap to fetch all products</p>
           </div>
@@ -1027,7 +1027,7 @@
           <div class="progress-bar" id="prog-bar"></div>
         </div>
       </div>
-       
+
       <div class="search-wrap">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <circle cx="11" cy="11" r="8" />
@@ -1524,7 +1524,7 @@
       return '📦';
     }
     async function findProductByCode(code) {
-      console.log('code' , code)
+      console.log('code', code)
       return new Promise((resolve, reject) => {
 
         const tx = db.transaction('products', 'readonly');
@@ -1758,21 +1758,41 @@
       });
     }
     function go(screen) {
+
       if (screen === cur) return;
+
+      // stop scanner if leaving it
       if (cur === 'scanner') stopScanner();
-      ['home', 'scanner', 'detail', 'settings'].forEach(s => {
-        document.getElementById('s-' + s).style.display = 'none';
+
+      const screens = ['home', 'scanner', 'detail', 'settings'];
+      const navItems = ['home', 'scanner', 'settings'];
+
+      // hide all screens
+      screens.forEach(s => {
+        const el = document.getElementById('s-' + s);
+        if (el) el.style.display = 'none';
       });
-      ['home', 'settings'].forEach(s => {
+
+      // reset nav active
+      navItems.forEach(s => {
         const el = document.getElementById('n-' + s);
         if (el) el.classList.remove('active');
       });
+
+      // show current screen
       const scr = document.getElementById('s-' + screen);
-      scr.style.display = 'flex';
-      scr.style.flexDirection = 'column';
+      if (scr) {
+        scr.style.display = 'flex';
+        scr.style.flexDirection = 'column';
+      }
+
+      // activate nav if exists
       const nav = document.getElementById('n-' + screen);
       if (nav) nav.classList.add('active');
+
       cur = screen;
+
+      // hooks
       if (screen === 'scanner') startScanner();
       if (screen === 'settings') loadSettings();
     }
@@ -1835,12 +1855,12 @@
     }
 
     async function onScan(code) {
-      console.log('code' , code)
+      console.log('code', code)
       if (code === lastCode) return;
       lastCode = code;
       document.getElementById('scan-result').querySelector('p').textContent = 'Searching: ' + code;
       const found = await findProductByCode(code);
-      
+
       if (found) {
         stopScanner();
         showDetail(found.unique_id);
@@ -1861,14 +1881,14 @@
       setTimeout(() => t.remove(), 2600);
     }
 
-  
+
 
 
     (async () => {
 
       await openDB();
 
-      totalProducts = await countProducts(); 
+      totalProducts = await countProducts();
       updateStats();
 
       renderList();
