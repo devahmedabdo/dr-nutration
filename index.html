@@ -984,7 +984,7 @@
       box-shadow: 0 0 8px rgba(124, 110, 245, .4), 0 0 40px rgb(221 217 255 / 40%)
     }
 
-    iframe img{
+    iframe img {
       width: 100%;
     }
   </style>
@@ -1181,7 +1181,7 @@
   </div>
 
   <script>
-
+    // https://data.drnutrition.com/api/v1/products/laperva-beef-triple-zero-4-lb-chocolate/option-combinations
     const DEFAULT_URL = 'https://data.drnutrition.com/api/v1/search?categories%5B%5D=Sports+Nutrition&categories%5B%5D=Health+%26+Wellness&categories%5B%5D=Beauty+%26+Care&categories%5B%5D=Healthy+Foods&categories%5B%5D=Health+Care&categories%5B%5D=Skin+Care&categories%5B%5D=Immune+Support&categories%5B%5D=Vitamins&categories%5B%5D=Antioxidants&categories%5B%5D=Proteins&categories%5B%5D=Organic&categories%5B%5D=Snacks&categories%5B%5D=Pre-Workout&categories%5B%5D=Gym+Essentials&categories%5B%5D=Moisturizer&categories%5B%5D=Minerals&categories%5B%5D=Weight+Management&categories%5B%5D=Digestive+Health+%26+Probiotics&categories%5B%5D=Skin+Hair+%26+Nails&categories%5B%5D=OTC&categories%5B%5D=Fat+Burners&categories%5B%5D=Amino+%26+EAAS&categories%5B%5D=Whey+Protein&categories%5B%5D=Diet+Snacks&categories%5B%5D=Heart+Health&categories%5B%5D=Bone+Health&categories%5B%5D=Women%27s+Health&categories%5B%5D=Sleep+%26+Relaxation+Support&categories%5B%5D=Brain+Support&categories%5B%5D=Toothpaste&categories%5B%5D=Cleanser&categories%5B%5D=Protein+Snacks&categories%5B%5D=Vegan&categories%5B%5D=Multivitamins&categories%5B%5D=Hair+Care&categories%5B%5D=Gluten+-+Wheat+Free&categories%5B%5D=Baby+Care&categories%5B%5D=Sun+Screen&categories%5B%5D=Vitamin+C&categories%5B%5D=Creatine&categories%5B%5D=Men%27s+Health&categories%5B%5D=Fish+Oil+and+Omegas&categories%5B%5D=Essential+Oils&categories%5B%5D=Magnesium&categories%5B%5D=Gym+Shakers&categories%5B%5D=Testosterone+Boosters&categories%5B%5D=Vegetarian&categories%5B%5D=BCAA&categories%5B%5D=Whey+Protein+Isolate&categories%5B%5D=Vitamin+B+and+folic+acid&per_page=100';
 
     let cur = 'home';
@@ -1294,8 +1294,8 @@
 
         const totalPages = pg.total_pages;
 
-        // const maxPages = 4;
-        const maxPages = Math.min(totalPages, 60);
+        const maxPages = 1;
+        // const maxPages = Math.min(totalPages, 60);
 
         const firstBatch = d1.data.products || [];
 
@@ -1303,6 +1303,7 @@
 
         await saveProductsToDB(firstBatch);
 
+        
         pb.style.width =
           Math.round((1 / maxPages) * 100) + '%';
 
@@ -1389,11 +1390,12 @@
 
       return new Promise((resolve, reject) => {
 
-        const tx = db.transaction('products', 'readonly');
+        const tx = requireDB().transaction('products', 'readonly');
 
         const store = tx.objectStore('products');
 
         const request = store.count();
+ 
 
         request.onsuccess = () => resolve(request.result);
 
@@ -1404,7 +1406,7 @@
     }
 
     function setStatus(msg) {
-     
+
       document.getElementById('sync-status').textContent = msg;
     }
 
@@ -1422,14 +1424,14 @@
 
       return new Promise((resolve, reject) => {
 
-        const tx = db.transaction('products', 'readonly');
+        const tx = requireDB().transaction('products', 'readonly');
 
         const store = tx.objectStore('products');
 
         const req = store.get(String(id));
 
         req.onsuccess = (res) => {
-     
+
           return resolve(req.result);
         }
 
@@ -1453,8 +1455,7 @@
         currentPage,
         currentSearch
       );
-      totalProducts = result.total;
-
+      totalProducts = result.total; 
       const filtered = result.items;
 
       const list = document.getElementById('plist');
@@ -1468,7 +1469,7 @@
 
         return;
       }
-     
+
       list.innerHTML = filtered.map(p => {
 
 
@@ -1526,48 +1527,72 @@
       return '📦';
     }
     async function findProductByCode(code) {
-    
-      return new Promise((resolve, reject) => {
+      const dbSearch = () =>
+        new Promise((resolve, reject) => {
+          const tx = requireDB().transaction('products', 'readonly');
+          const store = tx.objectStore('products');
 
-        const tx = db.transaction('products', 'readonly');
+          const indexes = [
+            store.index('sku'),
+            store.index('item_no')
+          ];
 
-        const store = tx.objectStore('products');
+          let done = false;
 
-        const indexes = [
-          store.index('sku'),
-          store.index('item_no')
-        ];
+          indexes.forEach(index => {
+            const req = index.get(code);
 
-        let done = false;
+            req.onsuccess = () => {
+              if (done) return;
 
-        indexes.forEach(index => {
+              if (req.result) {
+                done = true;
+                resolve(req.result);
+              }
+            };
 
-          const req = index.get(code);
-     
-          req.onsuccess = () => {
+            req.onerror = () => reject(req.error);
+          });
 
-            if (done) return;
-
-            if (req.result) {
-
-              done = true;
-
-              resolve(req.result);
-            }
+          tx.oncomplete = () => {
+            if (!done) resolve(null);
           };
+
+          tx.onerror = () => reject(tx.error);
         });
 
-        tx.oncomplete = () => {
+      // 1️⃣ try local DB first
+      const localResult = await dbSearch();
 
-          if (!done) resolve(null);
+      if (localResult) {
+        console.log('localResult')
+        return localResult;
+      }
 
-        };
+      // 2️⃣ fallback to API
+      try {
+        console.log('try fetch')
+        const res = await fetch(`https://data.drnutrition.com/api/v1/search?q=${encodeURIComponent(code)}`);
 
-        tx.onerror = () => reject(tx.error);
+        if (!res.ok) throw new Error('API request failed');
 
-      });
+        const data = await res.json();
 
+        const firstBatch = data.data.products || [];
+
+        if (firstBatch.length) {
+          syncedCount += firstBatch.length;
+          await saveProductsToDB(firstBatch);
+          return firstBatch[0];
+        }
+        return null
+
+      } catch (err) {
+        console.error('API fallback failed:', err);
+        return null;
+      }
     }
+
     async function showDetail(optionId) {
       const p = await getProductById(optionId);
 
@@ -1580,7 +1605,7 @@
         '<h2>' + p.title + '</h2>' +
         '</div>' +
         (p.image
-          ? '<div class="detail-img-wrap"><iframe referrerpolicy="no-referrer"  src="' + p.image +  '"></iframe> </div>'
+          ? '<div class="detail-img-wrap"><iframe referrerpolicy="no-referrer"  src="' + p.image + '"></iframe> </div>'
           : '<div class="detail-img-wrap"><div class="emoji">' + emoji(p) + '</div></div>') +
         '<div class="detail-body">' +
         '<div class="cats-row">' +
@@ -1609,39 +1634,126 @@
           '<div class="drow"><span class="k">Hours</span><span class="v">' + p.express_delivery.hour_from + ':00 – ' + p.express_delivery.hour_to + ':00</span></div>' +
           '</div>' : '') +
         '<div class="section-card"><h3>Links</h3>' +
-        '<div class="drow"><span class="k">Product URL</span><a href="'+p.url+'" target="_blank" class="v" style="color:var(--accent2);font-size:11px;word-break:break-all">' + (p.url || '—') + '</a></div>' +
+        '<div class="drow"><span class="k">Product URL</span><a href="' + p.url + '" target="_blank" class="v" style="color:var(--accent2);font-size:11px;word-break:break-all">' + (p.url || '—') + '</a></div>' +
         '<div class="drow"><span class="k">Product ID</span><span class="v">' + p.unique_id + ' / opt ' + p.product_option_id + '</span></div>' +
         '</div>' +
         '</div>';
       document.getElementById('s-detail').scrollTop = 0;
     }
-    async function getProductsPage(page = 1, search = '') {
+
+    let apiInFlight = false;
+    let apiDebounceTimer = null;
+    let lastSearchKey = null;
+
+    function fetchFromAPI(page, search) {
+
+      if (apiInFlight) {
+        console.log('API already running → skip');
+        return Promise.resolve([]);
+      }
+
+      const key = `${page}:${search}`;
+
+      console.log('schedule api fetch (debounced)');
 
       return new Promise((resolve, reject) => {
-        let matched = 0;
-        const tx = db.transaction('products', 'readonly');
 
+        if (apiDebounceTimer) {
+          clearTimeout(apiDebounceTimer);
+        }
+
+        apiDebounceTimer = setTimeout(async () => {
+
+          try {
+
+            if (lastSearchKey === key) {
+              console.log('duplicate request blocked');
+              return resolve([]);
+            }
+
+            lastSearchKey = key;
+            apiInFlight = true;
+
+            console.log('fetch from api');
+
+            const res = await fetch(
+              `https://data.drnutrition.com/api/v1/search?q=${encodeURIComponent(search)}`
+            );
+
+            if (!res.ok) throw new Error('API failed');
+
+            const data = await res.json();
+
+            resolve(data?.data?.products || []);
+
+          } catch (err) {
+            reject(err);
+          } finally {
+            apiInFlight = false;
+          }
+
+        }, 500);
+
+      });
+    }
+
+    async function getProductsPage(page = 1, search = '') {
+
+      const saveToDB = (items) => {
+        const tx = requireDB().transaction('products', 'readwrite');
         const store = tx.objectStore('products');
 
-        const items = [];
+        items.forEach(item => {
+          store.put(item);
+        });
+      };
 
+      return new Promise((resolve, reject) => {
+
+        const items = [];
+        let matched = 0;
         let skipped = 0;
 
         const start = (page - 1) * PAGE_SIZE;
 
+        let hasAnyMatch = false;
+
+        const tx = requireDB().transaction('products', 'readonly');
+        const store = tx.objectStore('products');
+
         const request = store.openCursor();
 
-        request.onsuccess = (e) => {
+        request.onsuccess = async (e) => {
 
           const cursor = e.target.result;
 
+          // 🟡 End of DB scan
           if (!cursor) {
 
-            resolve({
-              items, total: matched
-            });
+            // ❗ NO MATCH FOUND IN ENTIRE DB
+            if (!hasAnyMatch) {
+              try {
+                const apiItems = await fetchFromAPI(page, search);
 
-            return;
+                // 💾 save to IndexedDB
+                saveToDB(apiItems);
+
+                return resolve({
+                  items: apiItems.slice(0, PAGE_SIZE),
+                  total: apiItems.length,
+                  source: 'api'
+                });
+
+              } catch (err) {
+                return reject(err);
+              }
+            }
+
+            return resolve({
+              items,
+              total: matched,
+              source: 'db'
+            });
           }
 
           const p = cursor.value;
@@ -1649,28 +1761,23 @@
           let match = true;
 
           if (search) {
-
             const q = search.toLowerCase();
 
             match =
               (p.title || '').toLowerCase().includes(q) ||
               (p.sku || '').toLowerCase().includes(q) ||
               (p.item_no || '').toLowerCase().includes(q) ||
-              (p.category_one_name || '')
-                .toLowerCase()
-                .includes(q);
+              (p.category_one_name || '').toLowerCase().includes(q);
           }
 
           if (match) {
+            hasAnyMatch = true;
             matched++;
+
             if (skipped < start) {
-
               skipped++;
-
             } else if (items.length < PAGE_SIZE) {
-
               items.push(p);
-
             }
           }
 
@@ -1680,45 +1787,23 @@
         request.onerror = () => reject(request.error);
 
       });
-
     }
+
     async function saveProductsToDB(items) {
 
       return new Promise((resolve, reject) => {
 
-        const tx = db.transaction('products', 'readwrite');
+        const tx = requireDB().transaction('products', 'readwrite');
 
         const store = tx.objectStore('products');
 
         items.forEach(p => {
 
-          store.put({
-            product_option_id: p.product_option_id,
-            product_id: p.product_id,
-            title: p.title,
-            sku: p.sku,
-            item_no: p.item_no,
-            image: p.image,
-            selling_price: p.selling_price,
-            currency: p.currency,
-            in_stock: p.in_stock,
-            category_one_name: p.category_one_name,
-            category_two_name: p.category_two_name,
-            availability: p.availability,
-            discount: p.discount,
-            price: p.price,
-            quantity: p.quantity,
-            unique_id: p.unique_id,
-            rating: p.rating,
-            weight: p.weight,
-            dimensions: p.dimensions,
-            express_delivery: p.express_delivery,
-            url: p.url
-          });
+          store.put(p);
 
         });
 
-        tx.oncomplete = () => resolve();
+        tx.oncomplete = () => console.log('saved to db'); resolve();
 
         tx.onerror = () => {
           console.log(tx.error)
@@ -1727,16 +1812,20 @@
 
       });
     }
+    function requireDB() {
+      if (!db) throw new Error('DB not ready yet');
+      return db;
+    }
+
     function openDB() {
       return new Promise((resolve, reject) => {
 
         const request = indexedDB.open('DrNutritionDB', 2);
-        request.onupgradeneeded = (e) => {
 
+        request.onupgradeneeded = (e) => {
           const db = e.target.result;
 
           if (!db.objectStoreNames.contains('products')) {
-
             const store = db.createObjectStore('products', {
               keyPath: 'unique_id'
             });
@@ -1745,12 +1834,11 @@
             store.createIndex('title', 'title', { unique: false });
             store.createIndex('sku', 'sku', { unique: false });
             store.createIndex('item_no', 'item_no', { unique: false });
-
           }
         };
 
-        request.onsuccess = () => {
-          db = request.result;
+        request.onsuccess = (e) => {
+          db = e.target.result; // ✅ مهم جدًا
           resolve(db);
         };
 
@@ -1817,7 +1905,7 @@
 
     async function clearCache() {
 
-      const tx = db.transaction('products', 'readwrite');
+      const tx = requireDB().transaction('products', 'readwrite');
 
       const store = tx.objectStore('products');
 
@@ -1838,6 +1926,7 @@
     }
 
     function startScanner() {
+      console.log('start scan')
       if (scannerOn) return;
       scanner = new Html5Qrcode('qr-reader');
       scanner.start(
@@ -1856,14 +1945,18 @@
     }
 
     async function onScan(code) {
+
       if (code === lastCode) return;
+      console.log('onScan', code)
       lastCode = code;
       document.getElementById('scan-result').querySelector('p').textContent = 'Searching: ' + code;
       const found = await findProductByCode(code);
+      console.log(' onScan found', found)
 
       if (found) {
         stopScanner();
         showDetail(found.unique_id);
+        lastCode = ''
       } else {
         document.getElementById('scan-result').querySelector('p').textContent = 'Not found: ' + code + ' — try Sync first';
         setTimeout(() => {
@@ -1894,7 +1987,6 @@
       renderList();
 
     })();
-
 
 
 
