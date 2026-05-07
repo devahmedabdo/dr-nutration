@@ -1,4 +1,4 @@
-const CACHE = 'drnutrition-v1';
+const CACHE = 'drnutrition-v2';
 const ASSETS = [
   '/',
   '/index.html',
