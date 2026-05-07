@@ -44,7 +44,7 @@
       background: var(--bg);
       color: var(--text);
       font-family: 'DM Sans', sans-serif;
-      height: 100vh;
+      height: 100svh;
       overflow: hidden
     }
 
@@ -1561,7 +1561,7 @@
           if (!done) resolve(null);
 
         };
-        
+
         tx.onerror = () => reject(tx.error);
 
       });
