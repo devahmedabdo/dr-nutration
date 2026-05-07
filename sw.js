@@ -2,6 +2,12 @@ const CACHE = 'drnutrition-v1';
 const ASSETS = [
   '/',
   '/index.html',
+  '/launchericon-48x48.png',
+  '/launchericon-72x72.png',
+  '/launchericon-96x96.png',
+  '/launchericon-144x144.png',
+  '/launchericon-192x192.png',
+  '/launchericon-512x512.png',
   '/manifest.json'
 ];
 

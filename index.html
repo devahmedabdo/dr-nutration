@@ -10,7 +10,8 @@
   <meta name="apple-mobile-web-app-title" content="Dr. Nutrition">
   <title>Dr. Nutrition Scanner</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="https://www.pwabuilder.com/assets/logos/header_logo.png">
+  <link rel="apple-touch-icon" href="./launchericon-192x192.png">
+  <link rel="icon" href="./launchericon-48x48.png">
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap');
@@ -982,6 +983,10 @@
       transition: transform .15s, box-shadow .15s;
       box-shadow: 0 0 8px rgba(124, 110, 245, .4), 0 0 40px rgb(221 217 255 / 40%)
     }
+
+    iframe img{
+      width: 100%;
+    }
   </style>
 </head>
 <body>
@@ -1320,7 +1325,6 @@
           const d = await r.json();
 
           const batch = d.data.products || [];
-          console.log(batch)
           if (!batch.length) break;
 
           syncedCount += batch.length;
@@ -1400,7 +1404,7 @@
     }
 
     function setStatus(msg) {
-      console.log(msg)
+     
       document.getElementById('sync-status').textContent = msg;
     }
 
@@ -1425,9 +1429,7 @@
         const req = store.get(String(id));
 
         req.onsuccess = (res) => {
-          console.log(req.result)
-          console.log(id)
-          console.log(req)
+     
           return resolve(req.result);
         }
 
@@ -1466,7 +1468,7 @@
 
         return;
       }
-      console.log(result.items)
+     
       list.innerHTML = filtered.map(p => {
 
 
@@ -1524,7 +1526,7 @@
       return '📦';
     }
     async function findProductByCode(code) {
-      console.log('code', code)
+    
       return new Promise((resolve, reject) => {
 
         const tx = db.transaction('products', 'readonly');
@@ -1541,8 +1543,7 @@
         indexes.forEach(index => {
 
           const req = index.get(code);
-          console.log(req)
-
+     
           req.onsuccess = () => {
 
             if (done) return;
@@ -1569,7 +1570,7 @@
     }
     async function showDetail(optionId) {
       const p = await getProductById(optionId);
-      console.log(p)
+
       if (!p) return;
       go('detail');
       const disc = p.discount > 0;
@@ -1579,7 +1580,7 @@
         '<h2>' + p.title + '</h2>' +
         '</div>' +
         (p.image
-          ? '<div class="detail-img-wrap"><iframe src="' + p.image +  '"></iframe> </div>'
+          ? '<div class="detail-img-wrap"><iframe referrerpolicy="no-referrer"  src="' + p.image +  '"></iframe> </div>'
           : '<div class="detail-img-wrap"><div class="emoji">' + emoji(p) + '</div></div>') +
         '<div class="detail-body">' +
         '<div class="cats-row">' +
@@ -1855,7 +1856,6 @@
     }
 
     async function onScan(code) {
-      console.log('code', code)
       if (code === lastCode) return;
       lastCode = code;
       document.getElementById('scan-result').querySelector('p').textContent = 'Searching: ' + code;
@@ -1898,9 +1898,9 @@
 
 
 
-    // if ('serviceWorker' in navigator) {
-    //   navigator.serviceWorker.register('sw.js').catch(() => { });
-    // }
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => { });
+    }
   </script>
 </body>
 </html>
