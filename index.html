@@ -1184,7 +1184,7 @@
 
   <script>
 
-    const DEFAULT_URL = 'https://data.drnutrition.com/api/v1/search?include_aggregations=1&categories%5B%5D=Sports+Nutrition&categories%5B%5D=Health+%26+Wellness&categories%5B%5D=Beauty+%26+Care&categories%5B%5D=Healthy+Foods&categories%5B%5D=Health+Care&categories%5B%5D=Skin+Care&categories%5B%5D=Immune+Support&categories%5B%5D=Vitamins&categories%5B%5D=Antioxidants&categories%5B%5D=Proteins&categories%5B%5D=Organic&categories%5B%5D=Snacks&categories%5B%5D=Pre-Workout&categories%5B%5D=Gym+Essentials&categories%5B%5D=Moisturizer&categories%5B%5D=Minerals&categories%5B%5D=Weight+Management&categories%5B%5D=Digestive+Health+%26+Probiotics&categories%5B%5D=Skin+Hair+%26+Nails&categories%5B%5D=OTC&categories%5B%5D=Fat+Burners&categories%5B%5D=Amino+%26+EAAS&categories%5B%5D=Whey+Protein&categories%5B%5D=Diet+Snacks&categories%5B%5D=Heart+Health&categories%5B%5D=Bone+Health&categories%5B%5D=Women%27s+Health&categories%5B%5D=Sleep+%26+Relaxation+Support&categories%5B%5D=Brain+Support&categories%5B%5D=Toothpaste&categories%5B%5D=Cleanser&categories%5B%5D=Protein+Snacks&categories%5B%5D=Vegan&categories%5B%5D=Multivitamins&categories%5B%5D=Hair+Care&categories%5B%5D=Gluten+-+Wheat+Free&categories%5B%5D=Baby+Care&categories%5B%5D=Sun+Screen&categories%5B%5D=Vitamin+C&categories%5B%5D=Creatine&categories%5B%5D=Men%27s+Health&categories%5B%5D=Fish+Oil+and+Omegas&categories%5B%5D=Essential+Oils&categories%5B%5D=Magnesium&categories%5B%5D=Gym+Shakers&categories%5B%5D=Testosterone+Boosters&categories%5B%5D=Vegetarian&categories%5B%5D=BCAA&categories%5B%5D=Whey+Protein+Isolate&categories%5B%5D=Vitamin+B+and+folic+acid&per_page=100';
+    const DEFAULT_URL = 'https://data.drnutrition.com/api/v1/search?categories%5B%5D=Sports+Nutrition&categories%5B%5D=Health+%26+Wellness&categories%5B%5D=Beauty+%26+Care&categories%5B%5D=Healthy+Foods&categories%5B%5D=Health+Care&categories%5B%5D=Skin+Care&categories%5B%5D=Immune+Support&categories%5B%5D=Vitamins&categories%5B%5D=Antioxidants&categories%5B%5D=Proteins&categories%5B%5D=Organic&categories%5B%5D=Snacks&categories%5B%5D=Pre-Workout&categories%5B%5D=Gym+Essentials&categories%5B%5D=Moisturizer&categories%5B%5D=Minerals&categories%5B%5D=Weight+Management&categories%5B%5D=Digestive+Health+%26+Probiotics&categories%5B%5D=Skin+Hair+%26+Nails&categories%5B%5D=OTC&categories%5B%5D=Fat+Burners&categories%5B%5D=Amino+%26+EAAS&categories%5B%5D=Whey+Protein&categories%5B%5D=Diet+Snacks&categories%5B%5D=Heart+Health&categories%5B%5D=Bone+Health&categories%5B%5D=Women%27s+Health&categories%5B%5D=Sleep+%26+Relaxation+Support&categories%5B%5D=Brain+Support&categories%5B%5D=Toothpaste&categories%5B%5D=Cleanser&categories%5B%5D=Protein+Snacks&categories%5B%5D=Vegan&categories%5B%5D=Multivitamins&categories%5B%5D=Hair+Care&categories%5B%5D=Gluten+-+Wheat+Free&categories%5B%5D=Baby+Care&categories%5B%5D=Sun+Screen&categories%5B%5D=Vitamin+C&categories%5B%5D=Creatine&categories%5B%5D=Men%27s+Health&categories%5B%5D=Fish+Oil+and+Omegas&categories%5B%5D=Essential+Oils&categories%5B%5D=Magnesium&categories%5B%5D=Gym+Shakers&categories%5B%5D=Testosterone+Boosters&categories%5B%5D=Vegetarian&categories%5B%5D=BCAA&categories%5B%5D=Whey+Protein+Isolate&categories%5B%5D=Vitamin+B+and+folic+acid&per_page=100';
 
     let cur = 'home';
     let scanner = null;
@@ -1207,9 +1207,9 @@
 
     }
     function buildPageUrl(base, page) {
-      const clean = base.replace(/[&?]current_page=\d+/g, '');
+      const clean = base.replace(/[&?]page=\d+/g, '');
       const sep = clean.includes('?') ? '&' : '?';
-      return clean + sep + 'current_page=' + page;
+      return clean + sep + 'page=' + page;
     }
     function renderPagination() {
 
@@ -1325,8 +1325,8 @@
 
         const totalPages = pg.total_pages;
 
-        // const maxPages = 2;
-        const maxPages = Math.min(totalPages, 60);
+        const maxPages = 4;
+        // const maxPages = Math.min(totalPages, 60);
 
         const firstBatch = d1.data.products || [];
 
@@ -1356,7 +1356,7 @@
           const d = await r.json();
 
           const batch = d.data.products || [];
-
+          console.log(batch)
           if (!batch.length) break;
 
           syncedCount += batch.length;
@@ -1401,7 +1401,7 @@
 
       } catch (e) {
 
-        setStatus('Sync failed');
+        setStatus('Sync failed', e);
 
         toast(e.message);
 
@@ -1458,7 +1458,7 @@
 
         const store = tx.objectStore('products');
 
-        const req = store.get(+id);
+        const req = store.get(String(id));
 
         req.onsuccess = (res) => {
           console.log(req.result)
@@ -1468,7 +1468,7 @@
         }
 
         req.onerror = (res) => {
-          console.log('err',res)
+          console.log('err', res)
           return reject(req.error);
         }
 
@@ -1511,7 +1511,7 @@
 
         return `
       <div class="product-row"
-           onclick="showDetail('${p.product_option_id}')">
+           onclick="showDetail('${p.unique_id}')">
 
         <div class="p-thumb">
           ${p.imwdage
@@ -1644,7 +1644,7 @@
           '</div>' : '') +
         '<div class="section-card"><h3>Links</h3>' +
         '<div class="drow"><span class="k">Product URL</span><span class="v" style="color:var(--accent2);font-size:11px;word-break:break-all">' + (p.url || '—') + '</span></div>' +
-        '<div class="drow"><span class="k">Product ID</span><span class="v">' + p.product_id + ' / opt ' + p.product_option_id + '</span></div>' +
+        '<div class="drow"><span class="k">Product ID</span><span class="v">' + p.unique_id + ' / opt ' + p.product_option_id + '</span></div>' +
         '</div>' +
         '</div>';
       document.getElementById('s-detail').scrollTop = 0;
@@ -1742,6 +1742,7 @@
             discount: p.discount,
             price: p.price,
             quantity: p.quantity,
+            unique_id: p.unique_id,
             rating: p.rating,
             weight: p.weight,
             dimensions: p.dimensions,
@@ -1753,7 +1754,10 @@
 
         tx.oncomplete = () => resolve();
 
-        tx.onerror = () => reject(tx.error);
+        tx.onerror = () => {
+          console.log(tx.error)
+          return reject(tx.error);
+        }
 
       });
     }
@@ -1768,11 +1772,10 @@
           if (!db.objectStoreNames.contains('products')) {
 
             const store = db.createObjectStore('products', {
-              keyPath: 'product_option_id'
+              keyPath: 'unique_id'
             });
 
-            store.createIndex('product_id', 'product_id', { unique: false });
-            store.createIndex('product_option_id', 'product_option_id', { unique: true });
+            store.createIndex('unique_id', 'unique_id', { unique: true });
             store.createIndex('title', 'title', { unique: false });
             store.createIndex('sku', 'sku', { unique: false });
             store.createIndex('item_no', 'item_no', { unique: false });
@@ -1873,7 +1876,7 @@
       const found = await findProductByCode(code);
       if (found) {
         stopScanner();
-        showDetail(found.product_option_id);
+        showDetail(found.unique_id);
       } else {
         document.getElementById('scan-result').querySelector('p').textContent = 'Not found: ' + code + ' — try Sync first';
         setTimeout(() => {
