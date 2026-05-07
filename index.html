@@ -1524,7 +1524,7 @@
       return '📦';
     }
     async function findProductByCode(code) {
-
+      console.log('code' , code)
       return new Promise((resolve, reject) => {
 
         const tx = db.transaction('products', 'readonly');
@@ -1541,6 +1541,7 @@
         indexes.forEach(index => {
 
           const req = index.get(code);
+          console.log(req)
 
           req.onsuccess = () => {
 
@@ -1560,7 +1561,7 @@
           if (!done) resolve(null);
 
         };
-
+        
         tx.onerror = () => reject(tx.error);
 
       });
@@ -1834,10 +1835,12 @@
     }
 
     async function onScan(code) {
+      console.log('code' , code)
       if (code === lastCode) return;
       lastCode = code;
       document.getElementById('scan-result').querySelector('p').textContent = 'Searching: ' + code;
       const found = await findProductByCode(code);
+      
       if (found) {
         stopScanner();
         showDetail(found.unique_id);
